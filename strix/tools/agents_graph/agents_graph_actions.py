@@ -191,6 +191,7 @@ def create_agent(
     name: str,
     inherit_context: bool = True,
     skills: str | None = None,
+    agent_type: str = "StrixAgent",
 ) -> dict[str, Any]:
     try:
         parent_id = agent_state.agent_id
@@ -223,9 +224,17 @@ def create_agent(
                     "agent_id": None,
                 }
 
-        from strix.agents import StrixAgent
+        import strix.agents as agents
         from strix.agents.state import AgentState
         from strix.llm.config import LLMConfig
+
+        agent_class = getattr(agents, agent_type, None)
+        if not agent_class:
+            return {
+                "success": False,
+                "error": f"Agent type '{agent_type}' not found",
+                "agent_id": None,
+            }
 
         state = AgentState(task=task, agent_name=name, parent_id=parent_id, max_iterations=300)
 
@@ -248,7 +257,7 @@ def create_agent(
         if parent_agent and hasattr(parent_agent, "non_interactive"):
             agent_config["non_interactive"] = parent_agent.non_interactive
 
-        agent = StrixAgent(agent_config)
+        agent = agent_class(agent_config)
 
         inherited_messages = []
         if inherit_context:
