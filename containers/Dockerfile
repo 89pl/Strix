@@ -2,6 +2,8 @@ FROM kalilinux/kali-rolling:latest
 
 LABEL description="AI Agent Penetration Testing Environment with Comprehensive Automated Tools"
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y kali-archive-keyring sudo && \
     apt-get update && \
@@ -117,8 +119,6 @@ RUN git clone https://github.com/aravind0x7/JS-Snooper.git && \
     chmod +x jsniper.sh/jsniper.sh && \
     git clone https://github.com/ticarpi/jwt_tool.git && \
     chmod +x jwt_tool/jwt_tool.py
-
-ENV DEBIAN_FRONTEND=noninteractive
 
 RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin && \
     apt-get update && \
