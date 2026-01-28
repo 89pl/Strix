@@ -2,12 +2,11 @@ FROM kalilinux/kali-rolling:latest
 
 LABEL description="AI Agent Penetration Testing Environment with Comprehensive Automated Tools"
 
-ENV DEBIAN_FRONTEND=noninteractive
-
+# Initial Setup: Correct keyring and sudo
 RUN apt-get update && \
-    apt-get install -y kali-archive-keyring sudo && \
-    apt-get update && \
-    apt-get upgrade -y
+    apt-get install -y --no-install-recommends kali-archive-keyring sudo && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -s /bin/bash pentester && \
     usermod -aG sudo pentester && \
@@ -24,36 +23,66 @@ RUN mkdir -p /home/pentester/configs \
              /app/certs && \
     chown -R pentester:pentester /app/certs /home/pentester/tools
 
+# Chunk 1: Essential Base & Build Tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    wget curl git vim nano unzip tar \
+    wget curl git vim nano unzip tar build-essential \
     apt-transport-https ca-certificates gnupg lsb-release \
-    build-essential software-properties-common \
-    gcc libc6-dev pkg-config libpcap-dev libssl-dev \
+    pkg-config libpcap-dev libssl-dev gcc libc6-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 2: Programming Languages & Runtime
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     python3 python3-pip python3-dev python3-venv python3-setuptools \
-    golang-go rustc cargo \
-    net-tools dnsutils whois \
-    jq parallel ripgrep grep \
-    less man-db procps htop \
-    iproute2 iputils-ping netcat-traditional \
-    nmap ncat ndiff \
-    sqlmap nuclei subfinder naabu ffuf whatweb theharvester feroxbuster python3-requests \
-    metasploit-framework \
-    exploitdb \
-    hydra responder netexec powershell-empire sherlock john-data john legion ghidra \
-    mimikatz medusa powersploit bulk-extractor stegosuite steghide commix tcpdump 7zip radare2 \
-    nodejs npm pipx \
-    libcap2-bin \
-    gdb \
-    tmux \
+    golang-go rustc cargo nodejs npm pipx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 3: Networking & Basic Utils
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    net-tools dnsutils whois jq parallel ripgrep grep \
+    less man-db procps htop iproute2 iputils-ping netcat-traditional \
+    tmux libcap2-bin gdb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 4: Primary Security Scanners & Recon
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nmap ncat ndiff sqlmap nuclei subfinder naabu ffuf whatweb \
+    theharvester feroxbuster python3-requests && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 5: Advanced Security Frameworks & Exploitation
+# Note: Metasploit is very large, keeping it in its own chunk
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    metasploit-framework exploitdb && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 6: Post-Exploitation & Specialized Tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    hydra responder netexec powershell-empire sherlock john-data john \
+    legion ghidra mimikatz medusa powersploit bulk-extractor \
+    stegosuite steghide commix tcpdump 7zip radare2 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Chunk 7: GUI Libs & Browsing Support (Needed for Playwright/ZAP)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libatspi2.0-0 \
     libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1-0-0 libcairo2 libasound2t64 \
     fonts-unifont fonts-noto-color-emoji fonts-freefont-ttf fonts-dejavu-core ttf-bitstream-vera \
     libnss3-tools && \
-    apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
 
 RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
 
@@ -120,14 +149,18 @@ RUN git clone https://github.com/aravind0x7/JS-Snooper.git && \
     git clone https://github.com/ticarpi/jwt_tool.git && \
     chmod +x jwt_tool/jwt_tool.py
 
+# Chunk 8: Third-party Binary Tools (Trufflehog, ZAP, Trivy, Gitleaks, Tor)
+USER root
+ENV DEBIAN_FRONTEND=noninteractive
 RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin && \
     apt-get update && \
-    apt-get install -y zaproxy wapiti tor torsocks proxychains4 && \
+    apt-get install -y --no-install-recommends zaproxy wapiti tor torsocks proxychains4 && \
     curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin && \
     curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz -o gitleaks.tar.gz && \
     tar -xzf gitleaks.tar.gz && \
     mv gitleaks /usr/local/bin/ && \
     rm gitleaks.tar.gz && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Configure Tor for SOCKS proxy (default port 9050)
@@ -153,10 +186,9 @@ RUN ARCH=$(uname -m) && \
     curl -sSfL "https://github.com/ph4ntonn/Stowaway/releases/download/v2.2/${STOWAWAY_ARCH}_agent" -o /usr/local/bin/stowaway_agent && \
     chmod +x /usr/local/bin/stowaway_admin /usr/local/bin/stowaway_agent
 
-USER root
-
+# Final APT Cleanup
 RUN apt-get autoremove -y && \
-    apt-get autoclean && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PATH="/home/pentester/go/bin:/home/pentester/.local/bin:/home/pentester/.npm-global/bin:/app/venv/bin:$PATH"
@@ -166,10 +198,8 @@ ENV POETRY_HOME="/opt/poetry"
 # Install Kiterunner (kr)
 RUN curl -sL https://github.com/assetnote/kiterunner/releases/download/v1.0.2/kiterunner_1.0.2_linux_amd64.tar.gz | tar xz -C /usr/local/bin kr
 
-# Install GraphQL Tools
 USER pentester
-RUN pipx install clairvoyance && \
-    curl -sSL https://github.com/dolevf/graphw00f/archive/refs/heads/main.tar.gz -o /tmp/graphw00f.tar.gz && \
+RUN curl -sSL https://github.com/dolevf/graphw00f/archive/refs/heads/main.tar.gz -o /tmp/graphw00f.tar.gz && \
     mkdir -p /home/pentester/tools/graphw00f && \
     tar -xzf /tmp/graphw00f.tar.gz -C /home/pentester/tools/graphw00f --strip-components=1 && \
     rm /tmp/graphw00f.tar.gz
@@ -210,7 +240,7 @@ RUN mkdir -p /workspace && chown -R pentester:pentester /workspace /app
 COPY --chown=pentester:pentester pyproject.toml poetry.lock ./
 
 USER pentester
-RUN poetry lock && poetry install --no-root --without dev --extras sandbox
+RUN poetry install --no-root --without dev --extras sandbox
 RUN poetry run playwright install chromium
 
 RUN /app/venv/bin/pip install -r /home/pentester/tools/jwt_tool/requirements.txt && \
