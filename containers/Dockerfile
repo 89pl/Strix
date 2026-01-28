@@ -5,6 +5,8 @@ LABEL description="AI Agent Penetration Testing Environment with Comprehensive A
 # Initial Setup: Correct keyring and sudo
 RUN apt-get update && \
     apt-get install -y --no-install-recommends kali-archive-keyring sudo && \
+    apt-get update && \
+    apt-get upgrade -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -119,7 +121,7 @@ WORKDIR /tmp
 
 RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
     go install -v github.com/projectdiscovery/katana/cmd/katana@latest && \
-    go install -v github.com/projectdiscovery/cvemap/cmd/vulnx@latest && \
+    go install -v github.com/projectdiscovery/cvemap/cmd/cvemap@latest && \
     go install -v github.com/jaeles-project/gospider@latest && \
     go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest && \
     rm -rf /home/pentester/go/pkg
