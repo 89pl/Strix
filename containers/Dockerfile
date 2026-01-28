@@ -77,8 +77,8 @@ RUN apt-get update && \
 # Chunk 7: GUI Libs & Browsing Support (Needed for Playwright/ZAP)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libnss3 libnspr4 libdbus-1-3 libatk1.0-0t64 libatk-bridge2.0-0t64 libcups2t64 libdrm2 libatspi2.0-0 \
-    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1.0-0t64 libcairo2 libasound2t64 \
+    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libatspi2.0-0 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1.0-0 libcairo2 libasound2t64 \
     fonts-unifont fonts-noto-color-emoji fonts-freefont-ttf fonts-dejavu-core ttf-bitstream-vera \
     libnss3-tools && \
     apt-get clean && \
