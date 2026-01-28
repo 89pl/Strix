@@ -45,9 +45,12 @@ RUN apt-get update && \
     gdb \
     tmux \
     libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libatspi2.0-0 \
-    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1.0-0 libcairo2 libasound2t64 \
+    libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libxkbcommon0 libpango-1-0-0 libcairo2 libasound2t64 \
     fonts-unifont fonts-noto-color-emoji fonts-freefont-ttf fonts-dejavu-core ttf-bitstream-vera \
-    libnss3-tools
+    libnss3-tools && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 
 RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
@@ -87,21 +90,25 @@ RUN go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
     go install -v github.com/projectdiscovery/katana/cmd/katana@latest && \
     go install -v github.com/projectdiscovery/cvemap/cmd/vulnx@latest && \
     go install -v github.com/jaeles-project/gospider@latest && \
-    go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest
+    go install -v github.com/projectdiscovery/interactsh/cmd/interactsh-client@latest && \
+    rm -rf /home/pentester/go/pkg
 
 RUN nuclei -update-templates
 
 RUN pipx install arjun && \
     pipx install dirsearch && \
     pipx inject dirsearch setuptools && \
-    pipx install wafw00f
+    pipx install wafw00f && \
+    pipx install semgrep && \
+    pipx install bandit && \
+    pipx install safety && \
+    pipx install pip-audit && \
+    pipx install clairvoyance
 
 ENV NPM_CONFIG_PREFIX=/home/pentester/.npm-global
-RUN mkdir -p /home/pentester/.npm-global
-
-RUN npm install -g retire@latest && \
-    npm install -g eslint@latest && \
-    npm install -g js-beautify@latest
+RUN mkdir -p /home/pentester/.npm-global && \
+    npm install -g retire@latest eslint@latest js-beautify@latest jshint && \
+    npm cache clean --force
 
 WORKDIR /home/pentester/tools
 RUN git clone https://github.com/aravind0x7/JS-Snooper.git && \
@@ -111,34 +118,17 @@ RUN git clone https://github.com/aravind0x7/JS-Snooper.git && \
     git clone https://github.com/ticarpi/jwt_tool.git && \
     chmod +x jwt_tool/jwt_tool.py
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-
-RUN apt-get update && apt-get install -y zaproxy
-
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-
-RUN apt-get install -y wapiti
-
-USER pentester
-
-RUN npm install -g jshint
-
-USER root
-
-# Install Gitleaks
-RUN curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz -o gitleaks.tar.gz && \
+RUN curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin && \
+    apt-get update && \
+    apt-get install -y zaproxy wapiti tor torsocks proxychains4 && \
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin && \
+    curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.2/gitleaks_8.18.2_linux_x64.tar.gz -o gitleaks.tar.gz && \
     tar -xzf gitleaks.tar.gz && \
     mv gitleaks /usr/local/bin/ && \
-    rm gitleaks.tar.gz
-
-# Install Tor for anonymous networking and traffic routing
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    tor \
-    torsocks \
-    proxychains4 \
-    && rm -rf /var/lib/apt/lists/*
+    rm gitleaks.tar.gz && \
+    rm -rf /var/lib/apt/lists/*
 
 # Configure Tor for SOCKS proxy (default port 9050)
 RUN echo "SocksPort 9050" >> /etc/tor/torrc && \
@@ -162,13 +152,6 @@ RUN ARCH=$(uname -m) && \
     curl -sSfL "https://github.com/ph4ntonn/Stowaway/releases/download/v2.2/${STOWAWAY_ARCH}_admin" -o /usr/local/bin/stowaway_admin && \
     curl -sSfL "https://github.com/ph4ntonn/Stowaway/releases/download/v2.2/${STOWAWAY_ARCH}_agent" -o /usr/local/bin/stowaway_agent && \
     chmod +x /usr/local/bin/stowaway_admin /usr/local/bin/stowaway_agent
-
-USER pentester
-
-RUN pipx install semgrep && \
-    pipx install bandit && \
-    pipx install safety && \
-    pipx install pip-audit
 
 USER root
 
