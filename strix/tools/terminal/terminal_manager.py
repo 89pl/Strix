@@ -13,6 +13,7 @@ class TerminalManager:
         self._sessions_by_agent: dict[str, dict[str, TerminalSession]] = {}
         self._lock = threading.Lock()
         self.default_terminal_id = "default"
+        self.max_temp_terminals = 7
         self.default_timeout = 30.0
 
         self._register_cleanup_handlers()
@@ -74,6 +75,13 @@ class TerminalManager:
         sessions = self._get_agent_sessions()
         with self._lock:
             if terminal_id not in sessions:
+                if terminal_id != self.default_terminal_id:
+                    temp_count = len([tid for tid in sessions if tid != self.default_terminal_id])
+                    if temp_count >= self.max_temp_terminals:
+                        raise ValueError(
+                            f"Maximum of {self.max_temp_terminals} temporary terminals reached. "
+                            "Close an existing terminal session before opening a new one."
+                        )
                 sessions[terminal_id] = TerminalSession(terminal_id)
             return sessions[terminal_id]
 

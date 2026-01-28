@@ -28,7 +28,7 @@
         <description>Optional timeout in seconds for command execution. CAPPED AT 60 SECONDS. If not provided, uses default wait (30s). On timeout, the command keeps running and the tool returns with status 'running'. For truly long-running tasks, prefer backgrounding with '&'.</description>
       </parameter>
       <parameter name="terminal_id" type="string" required="false">
-        <description>Identifier for the terminal session. Defaults to "default". Use different IDs to manage multiple concurrent terminal sessions.</description>
+        <description>Identifier for the terminal session. Defaults to "default". Agents can manage up to 7 "temporary" sessions in addition to the default one.</description>
       </parameter>
       <parameter name="no_enter" type="boolean" required="false">
         <description>If true, don't automatically add Enter/newline after the command. Useful for:
@@ -148,5 +148,28 @@ ls -la</parameter>
   <parameter=terminal_id>python_session</parameter>
   </function>
     </examples>
+  </tool>
+  <tool name="terminal_list">
+    <description>List all currently active terminal sessions for the agent.</description>
+    <returns type="Dict[str, Any]">
+      <description>Response containing:
+      - sessions: A dictionary mapping terminal session IDs to their current status (running, working_dir)
+      - total_count: Total number of active terminal sessions
+      - max_temp_allowed: Maximum number of temporary sessions allowed (7)</description>
+    </returns>
+  </tool>
+  <tool name="terminal_close">
+    <description>Close a specific terminal session and free up its resources.</description>
+    <parameters>
+      <parameter name="terminal_id" type="string" required="true">
+        <description>The ID of the terminal session to close.</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Response containing:
+      - terminal_id: The ID of the closed terminal session
+      - message: Success/failure message
+      - status: Closure status ('closed', 'not_found', or 'error')</description>
+    </returns>
   </tool>
 </tools>

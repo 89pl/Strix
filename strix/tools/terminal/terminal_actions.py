@@ -33,3 +33,19 @@ def terminal_execute(
             "exit_code": None,
             "working_dir": None,
         }
+@register_tool
+def terminal_list() -> dict[str, Any]:
+    from .terminal_manager import get_terminal_manager
+
+    manager = get_terminal_manager()
+    result = manager.list_sessions()
+    result["max_temp_allowed"] = manager.max_temp_terminals
+    return result
+
+
+@register_tool
+def terminal_close(terminal_id: str) -> dict[str, Any]:
+    from .terminal_manager import get_terminal_manager
+
+    manager = get_terminal_manager()
+    return manager.close_session(terminal_id)
